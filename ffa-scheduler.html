@@ -382,6 +382,7 @@
     <div style="height:16px"></div>
     <div class="section-title">Quick Actions</div>
     <button class="btn btn-primary btn-full" style="margin-bottom:8px" onclick="generateSchedule()">⚡ Generate Schedule</button>
+    <button class="btn btn-green btn-full" onclick="saveToFirestore()">☁ Sync to Firebase</button>
     <button class="btn btn-secondary btn-full" style="margin-bottom:8px" onclick="exportSchedule()">↓ Export CSV</button>
     <button class="btn btn-secondary btn-full" onclick="openImportModal()">↑ Import / Load</button>
   </aside>
@@ -1568,16 +1569,7 @@ function importData() {
   }
 }
 
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyB9If8KVGwMicBsLeDNqU8gJp3pf_yekJk",
-  authDomain: "league-scheduler-2ef39.firebaseapp.com",
-  projectId: "league-scheduler-2ef39",
-  storageBucket: "league-scheduler-2ef39.firebasestorage.app",
-  messagingSenderId: "617748563967",
-  appId: "1:617748563967:web:994711e4de4359e27489ca",
-  measurementId: "G-31RZD69HK9"
-};
+ 
 // ════════════════════════════════════════════════════════════════════
 //  UTILS
 // ════════════════════════════════════════════════════════════════════
@@ -1643,6 +1635,39 @@ document.addEventListener('change', e => {
 //  START
 // ════════════════════════════════════════════════════════════════════
 init();
+</script>
+  <script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, doc, setDoc }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { getAuth, onAuthStateChanged }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+ // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyB9If8KVGwMicBsLeDNqU8gJp3pf_yekJk",
+  authDomain: "league-scheduler-2ef39.firebaseapp.com",
+  projectId: "league-scheduler-2ef39",
+  storageBucket: "league-scheduler-2ef39.firebasestorage.app",
+  messagingSenderId: "617748563967",
+  appId: "1:617748563967:web:994711e4de4359e27489ca",
+  measurementId: "G-31RZD69HK9"
+};
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const auth = getAuth(app);
+
+  // Save state to Firestore
+  window.saveToFirestore = async function() {
+    const user = auth.currentUser;
+    if (!user) { alert('Sign in first to sync to Firestore.'); return; }
+    try {
+      await setDoc(doc(db, 'ffa', 'schedule'), window._ffaState || state);
+      toast('Synced to Firestore ✓', 'success');
+    } catch(e) {
+      toast('Sync failed: ' + e.message, 'error');
+    }
+  };
 </script>
 </body>
 </html>
