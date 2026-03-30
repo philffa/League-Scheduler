@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FFA Dashboard — Schedule</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green:  #b5f23d;
+    --green2: #8ec92e;
+    --dark:   #0a0c09;
+    --dark2:  #111410;
+    --dark3:  #181c14;
+    --panel:  #1e2419;
+    --border: #2c3324;
+    --text:   #e8edd8;
+    --muted:  #7a8a60;
+    --muted2: #4a5538;
+    --danger: #ff5252;
+    --warn:   #f97316;
+    --blue:   #3b82f6;
+    --radius: 8px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--dark2);
+    border-bottom: 1px solid var(--border);
+    height: 56px; padding: 0 28px;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-logo {
+    font-family: 'Anton', sans-serif;
+    font-size: 20px; letter-spacing: 2px;
+    color: var(--green); text-transform: uppercase;
+    margin-right: 8px;
+  }
+  .topbar-sep { width: 1px; height: 24px; background: var(--border); }
+
+  .tab-nav { display: flex; gap: 2px; }
+  .tab-btn {
+    background: none; border: none; color: var(--muted);
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    transition: all .15s; letter-spacing: .2px;
+  }
+  .tab-btn:hover { color: var(--text); background: rgba(255,255,255,.04); }
+  .tab-btn.active { color: var(--green); background: rgba(181,242,61,.08); }
+
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .user-chip {
+    font-size: 12px; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 5px 12px; border-radius: 20px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .user-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+  .btn-sm {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); padding: 6px 14px;
+    border-radius: 6px; font-size: 12px; font-weight: 500;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all .15s;
+  }
+  .btn-sm:hover { border-color: var(--muted); color: var(--text); }
+  .btn-sm.green { border-color: rgba(181,242,61,.4); color: var(--green); background: rgba(181,242,61,.07); }
+  .btn-sm.green:hover { background: rgba(181,242,61,.12); }
+
+  /* ── LAYOUT ── */
+  .layout { display: flex; min-height: calc(100vh - 56px); }
+
+  .sidebar {
+    width: 240px; min-width: 240px;
+    background: var(--dark2); border-right: 1px solid var(--border);
+    padding: 20px 14px; overflow-y: auto;
+  }
+
+  .sb-section { margin-bottom: 20px; }
+  .sb-title {
+    font-size: 10px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted2);
+    padding: 0 8px; margin-bottom: 6px;
+  }
+  .sb-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: 6px;
+    cursor: pointer; transition: background .1s;
+    font-size: 13px; color: var(--muted);
+  }
+  .sb-item:hover { background: rgba(255,255,255,.04); color: var(--text); }
+  .sb-item.active { background: rgba(181,242,61,.08); color: var(--green); }
+  .sb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sb-count {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    background: var(--border); color: var(--muted);
+    padding: 1px 6px; border-radius: 10px;
+  }
+
+  .main { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+  /* ── PANELS ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(4,1fr);
+    gap: 12px; margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+  }
+  .stat-num {
+    font-family: 'Anton', sans-serif;
+    font-size: 32px; line-height: 1; letter-spacing: 1px;
+    color: var(--green);
+  }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 5px; letter-spacing: .5px; text-transform: uppercase; }
+  .stat.danger .stat-num { color: var(--danger); }
+  .stat.warn .stat-num { color: var(--warn); }
+
+  /* ── PAGE TITLE ROW ── */
+  .page-head {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .page-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 22px; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill {
+    font-size: 11px; font-weight: 600; letter-spacing: .5px;
+    padding: 4px 12px; border-radius: 20px;
+    border: 1px solid transparent; cursor: pointer;
+    transition: all .15s;
+  }
+  .pill.active { border-color: currentColor; }
+
+  /* ── WEEK CARD ── */
+  .week-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .week-head {
+    padding: 11px 16px; background: rgba(255,255,255,.02);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+  }
+  .week-num {
+    font-family: 'Anton', sans-serif; font-size: 20px;
+    color: var(--green); min-width: 40px;
+  }
+  .week-date { font-size: 13px; color: var(--muted); }
+  .tag {
+    font-size: 10px; font-weight: 700; letter-spacing: .8px;
+    padding: 2px 8px; border-radius: 4px; text-transform: uppercase;
+  }
+  .tag-bye { background: rgba(255,82,82,.1); color: var(--danger); }
+  .tag-note { background: rgba(249,115,22,.1); color: var(--warn); }
+  .tag-clash { background: rgba(255,82,82,.08); color: var(--danger); }
+
+  .game-table { width: 100%; border-collapse: collapse; }
+  .game-table th {
+    font-size: 10px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--muted2);
+    padding: 8px 14px; text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,.15);
+  }
+  .game-table td {
+    padding: 9px 14px; font-size: 13px;
+    border-bottom: 1px solid rgba(44,51,36,.5);
+  }
+  .game-table tr:last-child td { border-bottom: none; }
+  .game-table tr:hover td { background: rgba(255,255,255,.015); }
+  .game-table tr.clash-row td { background: rgba(255,82,82,.03); }
+
+  .div-tag {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 3px; letter-spacing: .3px;
+  }
+  .clash-icon { color: var(--danger); font-size: 12px; }
+
+  /* ── CLASHES PANEL ── */
+  .clash-item {
+    background: rgba(255,82,82,.05); border: 1px solid rgba(255,82,82,.15);
+    border-left: 3px solid var(--danger); border-radius: 0 6px 6px 0;
+    padding: 12px 16px; margin-bottom: 8px; font-size: 13px;
+  }
+  .clash-item strong { color: var(--text); }
+  .clash-item .clash-players { color: var(--danger); font-weight: 600; margin: 4px 0; }
+  .clash-item .clash-games { color: var(--muted); font-size: 12px; }
+
+  /* ── PLAYERS PANEL ── */
+  .player-table { width: 100%; border-collapse: collapse; }
+  .player-table th {
+    font-size: 10px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--muted2);
+    padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .player-table td {
+    padding: 8px 12px; font-size: 13px;
+    border-bottom: 1px solid rgba(44,51,36,.4);
+  }
+
+  /* ── LOADING / EMPTY ── */
+  .loading-state {
+    text-align: center; padding: 60px 24px;
+    color: var(--muted2);
+  }
+  .loading-spinner {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid var(--border); border-top-color: var(--green);
+    animation: spin .7s linear infinite; margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center; padding: 60px 24px; color: var(--muted2);
+    font-size: 14px; line-height: 1.7;
+  }
+
+  /* ── AUTH GATE ── */
+  #authGate {
+    min-height: 100vh; display: flex;
+    align-items: center; justify-content: center;
+    background: var(--dark);
+  }
+  .auth-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 40px;
+    text-align: center; max-width: 360px; width: 90%;
+  }
+  .auth-box h2 {
+    font-family: 'Anton', sans-serif; font-size: 24px;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--green); margin-bottom: 8px;
+  }
+  .auth-box p { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .btn-back {
+    display: inline-block; margin-top: 14px;
+    font-size: 12px; color: var(--muted2); text-decoration: none;
+    cursor: pointer;
+  }
+  .btn-back:hover { color: var(--muted); }
+
+  /* ── SYNC INDICATOR ── */
+  #syncStatus {
+    font-size: 11px; color: var(--muted2);
+    display: flex; align-items: center; gap: 5px;
+  }
+  #syncStatus .sdot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted2); transition: background .3s;
+  }
+  #syncStatus.live .sdot { background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .week-body { overflow: hidden; }
+  .week-body.collapsed { display: none; }
+
+  @media (max-width: 768px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .sidebar { display: none; }
+    .topbar { padding: 0 16px; gap: 10px; }
+    .main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH GATE (shown until auth confirmed) -->
+<div id="authGate">
+  <div class="auth-box">
+    <div style="font-size:36px;margin-bottom:16px">🏈</div>
+    <h2>FFA Dashboard</h2>
+    <p>Checking your credentials...</p>
+    <div class="loading-spinner" style="margin:0 auto"></div>
+    <a href="index.html" class="btn-back">← Back to Home</a>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until auth confirmed) -->
+<div id="appShell" style="display:none">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">FFA</div>
+    <div class="topbar-sep"></div>
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="showTab('schedule')">Schedule</button>
+      <button class="tab-btn" onclick="showTab('clashes')">Clashes <span id="clashCount" style="font-size:10px;background:rgba(255,82,82,.2);color:var(--danger);padding:1px 5px;border-radius:4px;margin-left:2px;display:none"></span></button>
+      <button class="tab-btn" onclick="showTab('players')">Players</button>
+    </div>
+    <div class="topbar-right">
+      <div id="syncStatus">
+        <span class="sdot"></span>
+        <span id="syncText">Connecting...</span>
+      </div>
+      <button class="btn-sm" onclick="exportCSV()">↓ CSV</button>
+      <button class="btn-sm green" onclick="openScheduler()">Open Scheduler →</button>
+      <div class="user-chip">
+        <span class="dot"></span>
+        <span id="userEmailDisplay">—</span>
+      </div>
+      <button class="btn-sm" onclick="doSignOut()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sb-section">
+        <div class="sb-title">Filter</div>
+        <div class="sb-item active" onclick="setFilter(null,this)">
+          <span style="font-size:14px">🏈</span> All Divisions
+          <span class="sb-count" id="sb-count-all">—</span>
+        </div>
+        <div id="divSidebarItems"></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-title">Divisions</div>
+        <div id="divSummaryList" style="font-size:12px;color:var(--muted);padding:0 8px;line-height:1.9"></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-title">Season Info</div>
+        <div id="seasonInfoSb" style="font-size:12px;color:var(--muted);padding:0 8px;line-height:2"></div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+      <!-- SCHEDULE PANEL -->
+      <div class="panel active" id="tab-schedule">
+        <div class="page-head">
+          <span class="page-title" id="schedPageTitle">Schedule</span>
+          <div class="filter-pills" id="filterPills"></div>
+        </div>
+        <div class="stats-row" id="statsRow"></div>
+        <div id="scheduleContent">
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            Loading schedule...
+          </div>
+        </div>
+      </div>
+
+      <!-- CLASHES PANEL -->
+      <div class="panel" id="tab-clashes">
+        <div class="page-head">
+          <span class="page-title">Clash Report</span>
+        </div>
+        <div id="clashContent">
+          <div class="loading-state"><div class="loading-spinner"></div>Loading...</div>
+        </div>
+      </div>
+
+      <!-- PLAYERS PANEL -->
+      <div class="panel" id="tab-players">
+        <div class="page-head">
+          <span class="page-title">Players</span>
+          <input type="text" id="playerSearch" placeholder="Search..."
+            style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:200px;"
+            oninput="renderPlayers()">
+        </div>
+        <div id="playerContent">
+          <div class="loading-state"><div class="loading-spinner"></div>Loading...</div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ── FIREBASE ── -->
+<script type="module">
+  import { initializeApp }          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signOut }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getFirestore, doc, onSnapshot, collection, query, orderBy }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  // ── PASTE YOUR FIREBASE CONFIG HERE (same as index.html) ──
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // ── AUTH GUARD ──
+  onAuthStateChanged(auth, user => {
+    if (!user) {
+      // Not logged in — redirect
+      document.getElementById('authGate').innerHTML = `
+        <div class="auth-box">
+          <div style="font-size:36px;margin-bottom:16px">🔒</div>
+          <h2>Access Restricted</h2>
+          <p>You need to be signed in as an executive committee member to view the schedule dashboard.</p>
+          <a href="index.html">
+            <button style="width:100%;background:var(--green);color:var(--dark);border:none;padding:12px;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">
+              Sign In
+            </button>
+          </a>
+          <a href="index.html" class="btn-back">← Back to Home</a>
+        </div>`;
+      return;
+    }
+
+    // Authenticated — show app
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('appShell').style.display = 'block';
+    document.getElementById('userEmailDisplay').textContent = user.email;
+
+    // Subscribe to schedule data
+    subscribeToSchedule();
+  });
+
+  window.doSignOut = async () => {
+    await signOut(auth);
+    window.location.href = 'index.html';
+  };
+
+  // ── FIRESTORE LIVE LISTENER ──
+  function subscribeToSchedule() {
+    const scheduleRef = doc(db, 'ffa', 'schedule');
+    onSnapshot(scheduleRef, snap => {
+      if (snap.exists()) {
+        window._ffaState = snap.data();
+      } else {
+        // No data yet — use empty state
+        window._ffaState = { divisions: [], schedule: [], seasonName: 'Season', numFields: 2, timeslots: [], numWeeks: 0 };
+      }
+      setSyncLive();
+      renderAll();
+    }, err => {
+      console.error('Firestore error:', err);
+      setSyncError();
+    });
+  }
+
+  function setSyncLive() {
+    const el = document.getElementById('syncStatus');
+    el.classList.add('live');
+    document.getElementById('syncText').textContent = 'Live';
+  }
+  function setSyncError() {
+    document.getElementById('syncText').textContent = 'Error';
+  }
+</script>
+
+<script>
+// ── APP STATE & RENDERING ──
+window._ffaState = null;
+window._filterDivId = null;
+
+function getState() { return window._ffaState || { divisions:[], schedule:[], seasonName:'—', numFields:2, timeslots:[], numWeeks:0 }; }
+
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id === 'players') renderPlayers();
+  if (id === 'clashes') renderClashes();
+}
+
+function setFilter(divId, el) {
+  window._filterDivId = divId;
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderSchedule();
+  renderFilterPills();
+}
+
+function renderAll() {
+  renderSidebar();
+  renderStats();
+  renderSchedule();
+  renderFilterPills();
+  renderClashes();
+  renderPlayers();
+}
+
+// ── SIDEBAR ──
+function renderSidebar() {
+  const s = getState();
+  const totalGames = s.schedule.reduce((a,w)=>a+(w.bye?0:w.games.length),0);
+  document.getElementById('sb-count-all').textContent = totalGames;
+
+  // Division items
+  const el = document.getElementById('divSidebarItems');
+  el.innerHTML = '';
+  (s.divisions||[]).forEach(div => {
+    const teamCount = div.teams?.length || 0;
+    const item = document.createElement('div');
+    item.className = 'sb-item';
+    item.onclick = function() { setFilter(div.id, this); };
+    item.innerHTML = `
+      <span class="sb-dot" style="background:${div.color}"></span>
+      ${div.name}
+      <span class="sb-count">${teamCount}t</span>
+    `;
+    el.appendChild(item);
+  });
+
+  // Division summary
+  const sumEl = document.getElementById('divSummaryList');
+  sumEl.innerHTML = (s.divisions||[]).map(d =>
+    `<div><span style="color:${d.color};font-weight:600">${d.name}</span> — ${d.teams?.length||0} teams</div>`
+  ).join('');
+
+  // Season info
+  const si = document.getElementById('seasonInfoSb');
+  si.innerHTML = `
+    <div>${s.seasonName||'—'}</div>
+    <div>${s.numWeeks||0} weeks</div>
+    <div>${s.numFields||0} fields</div>
+  `;
+}
+
+// ── STATS ──
+function renderStats() {
+  const s = getState();
+  const totalGames = s.schedule.reduce((a,w)=>a+(w.bye?0:w.games.length),0);
+  const clashes = getClashes();
+  const totalTeams = (s.divisions||[]).reduce((a,d)=>a+(d.teams?.length||0),0);
+  const byeWeeks = s.schedule.filter(w=>w.bye).length;
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat"><div class="stat-num">${s.schedule.length}</div><div class="stat-label">Weeks</div></div>
+    <div class="stat"><div class="stat-num">${totalGames}</div><div class="stat-label">Games</div></div>
+    <div class="stat"><div class="stat-num">${totalTeams}</div><div class="stat-label">Teams</div></div>
+    <div class="stat ${clashes.length>0?'danger':''}"><div class="stat-num">${clashes.length}</div><div class="stat-label">Clashes</div></div>
+  `;
+
+  // Update clash count badge
+  const cc = document.getElementById('clashCount');
+  if (clashes.length > 0) {
+    cc.textContent = clashes.length; cc.style.display = '';
+  } else {
+    cc.style.display = 'none';
+  }
+
+  // Page title
+  document.getElementById('schedPageTitle').textContent = getState().seasonName || 'Schedule';
+}
+
+// ── FILTER PILLS ──
+function renderFilterPills() {
+  const s = getState();
+  const el = document.getElementById('filterPills');
+  el.innerHTML = `<span class="pill ${!window._filterDivId?'active':''}" style="color:var(--muted);border-color:var(--border)" onclick="setFilter(null,document.querySelector('.sb-item'))">All</span>`;
+  (s.divisions||[]).forEach(div => {
+    el.innerHTML += `<span class="pill ${window._filterDivId===div.id?'active':''}" style="color:${div.color}" onclick="setFilter('${div.id}',null)">${div.name}</span>`;
+  });
+}
+
+// ── SCHEDULE ──
+function renderSchedule() {
+  const s = getState();
+  const clashes = getClashes();
+  const clashWeeks = new Set(clashes.map(c=>c.week));
+  const clashGameIds = buildClashGameIds(clashes, s);
+
+  if (!s.schedule || s.schedule.length === 0) {
+    document.getElementById('scheduleContent').innerHTML = `
+      <div class="empty-state">
+        No schedule data yet.<br>
+        Use the <strong>FFA Scheduler</strong> to generate and sync a schedule.
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  s.schedule.forEach((week, wi) => {
+    const filtered = window._filterDivId
+      ? week.games.filter(g => g.divId === window._filterDivId)
+      : week.games;
+    if (window._filterDivId && filtered.length === 0 && !week.bye) return;
+
+    const hasClash = clashWeeks.has(week.weekNum);
+    const dateLabel = week.date ? formatDate(week.date) : '';
+
+    html += `<div class="week-card">
+      <div class="week-head" onclick="toggleWeekBody(${wi})">
+        <span class="week-num">W${week.weekNum}</span>
+        <span class="week-date">${dateLabel}</span>
+        ${week.note ? `<span class="tag tag-note">${week.note}</span>` : ''}
+        ${week.bye  ? `<span class="tag tag-bye">Bye</span>` : ''}
+        ${hasClash  ? `<span class="tag tag-clash">⚠ Clash</span>` : ''}
+        <span style="margin-left:auto;font-size:12px;color:var(--muted2)">
+          ${week.bye ? '' : `${filtered.length} game${filtered.length!==1?'s':''}`}
+        </span>
+      </div>
+      <div class="week-body" id="wb-${wi}">`;
+
+    if (week.bye) {
+      html += `<div style="text-align:center;padding:18px;color:var(--muted2);font-size:13px">Bye Week — No games</div>`;
+    } else if (!filtered || filtered.length === 0) {
+      html += `<div style="text-align:center;padding:18px;color:var(--muted2);font-size:13px">No games this week.</div>`;
+    } else {
+      html += `<table class="game-table">
+        <thead><tr>
+          <th>Time</th><th>Field</th><th>Home</th><th></th><th>Away</th><th>Division</th><th>Note</th>
+        </tr></thead><tbody>`;
+      filtered.forEach(game => {
+        const div = (s.divisions||[]).find(d => d.id === game.divId);
+        const home = div?.teams?.find(t => t.id === game.homeTeam);
+        const away = div?.teams?.find(t => t.id === game.awayTeam);
+        const isClash = clashGameIds.has(game.id);
+        html += `<tr class="${isClash?'clash-row':''}">
+          <td style="font-weight:600;font-size:13px">${game.time}</td>
+          <td style="color:var(--muted)">Field ${game.field}</td>
+          <td style="font-weight:500">${home?.name||'?'}</td>
+          <td style="color:var(--muted2);font-size:11px;text-align:center">VS</td>
+          <td style="font-weight:500">${away?.name||'?'}</td>
+          <td><span class="div-tag" style="background:${div?.color||'#888'}22;color:${div?.color||'#888'}">${div?.name||'?'}</span></td>
+          <td style="color:var(--muted2);font-size:12px">
+            ${isClash?'<span class="clash-icon" title="Player clash">⚠</span> ':''}${game.note||''}
+          </td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    html += `</div></div>`;
+  });
+
+  document.getElementById('scheduleContent').innerHTML = html || '<div class="empty-state">No games match the current filter.</div>';
+}
+
+function toggleWeekBody(wi) {
+  const el = document.getElementById('wb-'+wi);
+  if (el) el.classList.toggle('collapsed');
+}
+
+// ── CLASH DETECTION ──
+function getClashes() {
+  const s = getState();
+  const clashes = [];
+  (s.schedule||[]).forEach(week => {
+    if (week.bye) return;
+    const byTime = {};
+    (week.games||[]).forEach(g => {
+      if (!byTime[g.time]) byTime[g.time] = [];
+      byTime[g.time].push(g);
+    });
+    Object.entries(byTime).forEach(([time, games]) => {
+      games.forEach(g => {
+        const div = (s.divisions||[]).find(d => d.id === g.divId);
+        if (!div) return;
+        const home = div.teams?.find(t => t.id === g.homeTeam);
+        const away = div.teams?.find(t => t.id === g.awayTeam);
+        const gPlayers = [...(home?.players||[]), ...(away?.players||[])];
+        games.forEach(g2 => {
+          if (g2.id <= g.id) return;
+          const div2 = (s.divisions||[]).find(d => d.id === g2.divId);
+          if (!div2) return;
+          const home2 = div2.teams?.find(t => t.id === g2.homeTeam);
+          const away2 = div2.teams?.find(t => t.id === g2.awayTeam);
+          const g2Players = [...(home2?.players||[]), ...(away2?.players||[])];
+          const overlap = gPlayers.filter(p => g2Players.includes(p));
+          if (overlap.length > 0) {
+            clashes.push({
+              week: week.weekNum, time,
+              players: overlap,
+              game1: `${div.name}: ${home?.name||'?'} vs ${away?.name||'?'}`,
+              game2: `${div2.name}: ${home2?.name||'?'} vs ${away2?.name||'?'}`
+            });
+          }
+        });
+      });
+    });
+  });
+  return clashes;
+}
+
+function buildClashGameIds(clashes, s) {
+  const ids = new Set();
+  clashes.forEach(c => {
+    (s.schedule||[]).forEach(w => {
+      if (w.weekNum !== c.week) return;
+      (w.games||[]).forEach(g => {
+        const div = (s.divisions||[]).find(d=>d.id===g.divId);
+        const home = div?.teams?.find(t=>t.id===g.homeTeam);
+        const away = div?.teams?.find(t=>t.id===g.awayTeam);
+        const name = `${div?.name}: ${home?.name} vs ${away?.name}`;
+        if (name === c.game1 || name === c.game2) ids.add(g.id);
+      });
+    });
+  });
+  return ids;
+}
+
+function renderClashes() {
+  const clashes = getClashes();
+  const el = document.getElementById('clashContent');
+  if (clashes.length === 0) {
+    el.innerHTML = `<div class="empty-state">✅ No player clashes detected in the current schedule.</div>`;
+    return;
+  }
+  el.innerHTML = `<p style="font-size:13px;color:var(--warn);margin-bottom:16px">⚠️ ${clashes.length} clash${clashes.length!==1?'es':''} found. Edit games in the Scheduler to resolve.</p>` +
+    clashes.map(c => `
+      <div class="clash-item">
+        <strong>Week ${c.week}</strong> · ${c.time}
+        <div class="clash-players">${c.players.join(', ')}</div>
+        <div class="clash-games">${c.game1}<br>${c.game2}</div>
+      </div>`).join('');
+}
+
+// ── PLAYERS ──
+function renderPlayers() {
+  const s = getState();
+  const q = (document.getElementById('playerSearch')?.value||'').toLowerCase();
+  const allPlayers = buildAllPlayers(s);
+  const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(q));
+  const clashes = getClashes();
+
+  const el = document.getElementById('playerContent');
+  if (filtered.length === 0) {
+    el.innerHTML = `<div class="empty-state">No players found.</div>`; return;
+  }
+  let html = `<table class="player-table"><thead><tr>
+    <th>Name</th><th>Division / Team</th><th>Status</th>
+  </tr></thead><tbody>`;
+  filtered.forEach(p => {
+    const playerClashes = clashes.filter(c => c.players.includes(p.name));
+    html += `<tr>
+      <td style="font-weight:600">${p.name}</td>
+      <td>${p.assignments.map(a => {
+        const div = (s.divisions||[]).find(d=>d.id===a.divId);
+        const team = div?.teams?.find(t=>t.id===a.teamId);
+        return div ? `<span class="div-tag" style="background:${div.color}22;color:${div.color}">${div.name}: ${team?.name||'?'}</span> ` : '';
+      }).join('')}</td>
+      <td>${playerClashes.length>0
+        ? `<span style="color:var(--danger);font-size:12px;font-weight:600">⚠ ${playerClashes.length} clash${playerClashes.length>1?'es':''}</span>`
+        : `<span style="color:var(--green2);font-size:12px">✓ OK</span>`
+      }</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function buildAllPlayers(s) {
+  const map = {};
+  (s.divisions||[]).forEach(div => {
+    (div.teams||[]).forEach(team => {
+      (team.players||[]).forEach(name => {
+        if (!map[name]) map[name] = { name, assignments: [] };
+        if (!map[name].assignments.some(a=>a.divId===div.id))
+          map[name].assignments.push({ divId: div.id, teamId: team.id });
+      });
+    });
+  });
+  return Object.values(map).sort((a,b)=>a.name.localeCompare(b.name));
+}
+
+// ── EXPORT CSV ──
+function exportCSV() {
+  const s = getState();
+  let csv = 'Week,Date,Time,Field,Division,Home Team,Away Team,Note\n';
+  (s.schedule||[]).forEach(week => {
+    if (week.bye) {
+      csv += `${week.weekNum},${week.date||''},,,,,,Bye Week\n`; return;
+    }
+    (week.games||[]).forEach(g => {
+      const div = (s.divisions||[]).find(d=>d.id===g.divId);
+      const home = div?.teams?.find(t=>t.id===g.homeTeam);
+      const away = div?.teams?.find(t=>t.id===g.awayTeam);
+      csv += `${week.weekNum},${week.date||''},${g.time},Field ${g.field},${div?.name||''},${home?.name||''},${away?.name||''},${g.note||''}\n`;
+    });
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ffa-schedule.csv`; a.click();
+}
+
+function openScheduler() {
+  window.open('ffa-scheduler.html', '_blank');
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  const d = new Date(str + 'T00:00:00');
+  return d.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+}
+</script>
+
+</body>
+</html>
